@@ -108,7 +108,7 @@ def delete_sheet_endpoint(
     """
     delete_sheet(db, sheet_id, current_user.id)
 
-@router.patch("/{sheet_id}/lines/{line_id}", response_model=SheetResponse)
+@router.patch("/{sheet_id}/lines/{line_id}", response_model=SheetLineResponse)
 def update_line_endpoint(
     sheet_id:str,
     line_id:str,
