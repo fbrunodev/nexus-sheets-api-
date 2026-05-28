@@ -1,0 +1,22 @@
+# Ambiente virtual
+.venv/
+
+# Variáveis de ambiente — nunca sobe para o Git
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Alembic
+alembic/versions/__pycache__/
+
+# VS Code
+.vscode/
+
+# Sistema
+.DS_Store
+Thumbs.db

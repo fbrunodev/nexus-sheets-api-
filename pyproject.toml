@@ -1,0 +1,18 @@
+[project]
+name = "nexus-backend"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "alembic>=1.18.4",
+    "bcrypt>=5.0.0",
+    "fastapi>=0.136.3",
+    "psycopg2-binary>=2.9.12",
+    "pydantic[email]>=2.13.4",
+    "pydantic-settings>=2.14.1",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.29",
+    "sqlalchemy>=2.0.50",
+    "uvicorn[standard]>=0.48.0",
+]
