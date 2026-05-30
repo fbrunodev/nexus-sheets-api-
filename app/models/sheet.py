@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum, ForeignKey, Numeric
+from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum, ForeignKey, Numeric, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 import enum
@@ -33,6 +33,8 @@ class Sheet(Base):
     # Nome da Planilha
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
+    # Meta da planilha — objetivo numérico a atingir (valor inteiro)
+    goal: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
 
     # Dono da planilha - usuário que criou
     owner_id: Mapped[str] = mapped_column(
@@ -86,8 +88,8 @@ class Sheet(Base):
     # lazy="dynamic" permite filtrar as linhas sem carregar todas na memória
 
     lines: Mapped[list["SheetLine"]] = relationship(
-        "SheetLine", back_populates="sheet", lazy="select"
-    )
+        "SheetLine", back_populates="sheet", lazy="select", order_by="SheetLine.line_number"
+    )   
 
 
 class SheetLine(Base):

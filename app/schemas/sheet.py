@@ -45,8 +45,9 @@ class SheetCreate(BaseModel):
     operator_id: Optional[str]= None
     # Número de linhas iniciais - padrão 1
     initial_lines: int = 1
-
-
+    goal: int = 0
+    deposits: Optional[list[float]] = None
+    
 class SheetUpdate(BaseModel):
     """Dados para atualizar uma planilha existente."""
     name: Optional[str] = None
@@ -56,6 +57,7 @@ class SheetUpdate(BaseModel):
     cost_bot: Optional[float] = None
     cost_fintech: Optional[float] = None
     salary: Optional[float] = None
+    goal: Optional[int] = None
 
 
 
@@ -77,7 +79,7 @@ class SheetResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     lines: List[SheetLineResponse] = []
-
+    goal: int
     #Campos calculados dinamicamente
 
     @property
@@ -106,5 +108,5 @@ class SheetResponse(BaseModel):
     @property
     def final_result(self) -> float:
         """Resultado final: recebido + baú - depositado- custos"""
-        return self.total_received + self.total_chest - abs(self.total_deposited) - self.total_costs
+        return (self.total_received - abs(self.total_deposited) ) + self.salary + self.total_chest
     

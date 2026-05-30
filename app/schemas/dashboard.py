@@ -34,7 +34,7 @@ class DashboardResponse(BaseModel):
     total_received: float
     total_chest: float
     final_result: float
-
+   
 
     # Custos
     costs : CostSummary
