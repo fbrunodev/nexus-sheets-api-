@@ -2,18 +2,17 @@ from sqlalchemy.orm import Session
 from sqlalchemy import extract
 from app.models.sheet import Sheet, SheetLine, SheetStatus
 from app.schemas.dashboard import DashboardResponse, CostSummary, MonthlyPerformance
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 
 
 def get_dashboard_data(
-        db: Session,
-        owner_id: str,
-        period: str = "all",
-
+    db: Session,
+    owner_id: str,
+    period: str = "all",
 ) -> DashboardResponse:
     """
-    Calcula todas as métricas do dashboard para o usuário autenticado
+    Calcula todas as métricas do dashboard para o usuário autenticado.
 
     Períodos disponíveis:
     - all: todos os dados
@@ -26,22 +25,20 @@ def get_dashboard_data(
     sheets_query = db.query(Sheet).filter(
         Sheet.owner_id == owner_id,
         Sheet.is_deleted == False,
-
     )
 
     # Aplica filtro de período
     now = datetime.utcnow()
 
-    if period =="today":
+    if period == "today":
         sheets_query = sheets_query.filter(
             extract("day", Sheet.created_at) == now.day,
             extract("month", Sheet.created_at) == now.month,
             extract("year", Sheet.created_at) == now.year,
         )
-    elif period =="week":
+    elif period == "week":
         # Filtra pela semana atual (últimos 7 dias)
-        from datetime import timedelta
-        week_start = now - timedelta(day=7)
+        week_start = now - timedelta(days=7)
         sheets_query = sheets_query.filter(Sheet.created_at >= week_start)
     elif period == "month":
         sheets_query = sheets_query.filter(
@@ -51,12 +48,12 @@ def get_dashboard_data(
 
     sheets = sheets_query.all()
 
-    #-------- TOTAIS FINANCEIROS---------------------------------
-
+    # ─── TOTAIS FINANCEIROS ───────────────────────────────────
 
     total_deposited = 0.0
     total_received = 0.0
     total_chest = 0.0
+    total_salary = 0.0
     total_operations = 0
 
     cost_proxy = 0.0
@@ -64,7 +61,7 @@ def get_dashboard_data(
     cost_bot = 0.0
     cost_fintech = 0.0
 
-    # Dados agrupados pro mês para o gráfico
+    # Dados agrupados por mês para o gráfico
     monthly_data: dict = defaultdict(lambda: {
         "deposited": 0.0,
         "received": 0.0,
@@ -72,15 +69,15 @@ def get_dashboard_data(
     })
 
     for sheet in sheets:
-        # Acumula custos de cada planilha
+        # Acumula custos e salário de cada planilha
         cost_proxy += float(sheet.cost_proxy)
         cost_sms += float(sheet.cost_sms)
         cost_bot += float(sheet.cost_bot)
         cost_fintech += float(sheet.cost_fintech)
+        total_salary += float(sheet.salary)
 
         # Chave do mês no formato "YYYY-MM"
         month_key = sheet.created_at.strftime("%Y-%m")
-
 
         for line in sheet.lines:
             # Conta apenas linhas que têm algum valor preenchido
@@ -97,8 +94,8 @@ def get_dashboard_data(
 
     total_costs = cost_proxy + cost_sms + cost_bot + cost_fintech
 
-    # Resultado final: recebido + baú - depositado - custos
-    final_result = total_received + total_chest - total_deposited - total_costs
+    # Resultado final: recebido - depositado + baú + salário - custos
+    final_result = total_received - total_deposited + total_chest + total_salary - total_costs
 
     # Calcula o resultado por mês para o gráfico
     for month_key in monthly_data:

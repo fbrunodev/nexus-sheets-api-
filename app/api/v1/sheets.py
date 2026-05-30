@@ -20,7 +20,7 @@ from app.services.sheet import (
     delete_sheet,
     update_line,
 )
-
+from app.services.sheet import add_lines, remove_line, clear_all_lines
 
 
 # Agrupa todos os endpoints de planilha sob o prefixo /sheets
@@ -126,4 +126,40 @@ def update_line_endpoint(
 
 
 
-    
+@router.post("/{sheet_id}/lines", response_model=SheetResponse)
+def add_lines_endpoint(
+    sheet_id: str,
+    quantity: int = 5,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Adiciona N linhas vazias à planilha (padrão 5).
+    Use ?quantity=N para definir a quantidade.
+    """
+    return add_lines(db, sheet_id, current_user.id, quantity)
+
+
+@router.delete("/{sheet_id}/lines/{line_id}", response_model=SheetResponse)
+def remove_line_endpoint(
+    sheet_id: str,
+    line_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Remove uma linha específica da planilha.
+    """
+    return remove_line(db, sheet_id, line_id, current_user.id)
+
+
+@router.post("/{sheet_id}/clear", response_model=SheetResponse)
+def clear_lines_endpoint(
+    sheet_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Zera os valores de todas as linhas da planilha.
+    """
+    return clear_all_lines(db, sheet_id, current_user.id)
