@@ -24,7 +24,7 @@ def upgrade() -> None:
     op.create_table('activation_keys',
     sa.Column('id', sa.String(), nullable=False),
     sa.Column('key', sa.String(length=50), nullable=False),
-    sa.Enum('LIFETIME', 'MONTHLY', 'TRIAL', name='plantype', create_type=False),
+    sa.Column('type', sa.Enum('LIFETIME', 'MONTHLY', 'TRIAL', name='plantype', create_type=False), nullable=False),
     sa.Column('expires_at', sa.DateTime(), nullable=True),
     sa.Column('is_used', sa.Boolean(), nullable=False),
     sa.Column('used_by', sa.String(), nullable=True),
