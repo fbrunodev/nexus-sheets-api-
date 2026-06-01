@@ -97,6 +97,7 @@ def login_user(db: Session, data: UserLoginRequest) -> dict:
     # A mensagem é genérica intecionalmente - não reveal
     # se o email existe ou não no sistema(segurança)
 
+
     if not user or not verify_password(data.password, user.password_hash):
         raise HTTPException(
             status_code = status.HTTP_401_UNAUTHORIZED,
