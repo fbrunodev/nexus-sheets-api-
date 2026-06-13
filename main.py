@@ -7,6 +7,7 @@ from app.api.v1.sheets import router as sheets_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.operators import router as operators_router
 from app.api.v1.admin import router as admin_router
+from app.api.v1 import platforms
 
 app = FastAPI(
     title = settings.APP_NAME,
@@ -34,7 +35,7 @@ app.include_router(sheets_router, prefix="/api/v1")
 app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(operators_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
-
+app.include_router(platforms.router, prefix="/api/v1")
 @app.get("/health")
 def health_check():
     """
