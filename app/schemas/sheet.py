@@ -47,7 +47,9 @@ class SheetCreate(BaseModel):
     initial_lines: int = 1
     goal: int = 0
     deposits: Optional[list[float]] = None
-    
+    platform_id: Optional[str] = None
+
+
 class SheetUpdate(BaseModel):
     """Dados para atualizar uma planilha existente."""
     name: Optional[str] = None
@@ -80,6 +82,7 @@ class SheetResponse(BaseModel):
     updated_at: datetime
     lines: List[SheetLineResponse] = []
     goal: int
+    platform_id: Optional[str] = None
     #Campos calculados dinamicamente
 
     @property

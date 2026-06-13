@@ -90,6 +90,10 @@ class Sheet(Base):
     lines: Mapped[list["SheetLine"]] = relationship(
         "SheetLine", back_populates="sheet", lazy="select", order_by="SheetLine.line_number"
     )   
+    # Plataforma vinculada à planilha (opcional)
+    platform_id: Mapped[str | None] = mapped_column(
+        String, ForeignKey("platforms.id"), nullable=True
+    )
 
 
 class SheetLine(Base):

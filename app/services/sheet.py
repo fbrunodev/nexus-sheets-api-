@@ -72,6 +72,7 @@ def create_new_sheet(db: Session, data: SheetCreate, owner_id:str) -> Sheet:
         owner_id=owner_id,
         operator_id=data.operator_id,
         goal=data.goal,
+        platform_id=data.platform_id,
     )
 
     # Persiste a planilha primeiro para ter o ID disponível
