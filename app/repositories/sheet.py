@@ -5,10 +5,12 @@ from datetime import datetime
 
 #------------------SHEET----------------------------------------
 
-def get_sheets_by_owner(db:Session, owner_id:str) -> list[Sheet]:
+def get_sheets_by_owner(
+    db:Session, owner_id:str, limit: int=20, offset: int=0
+) -> list[Sheet]:
     """
-    Retorna todas as planilhas ativas de um usuário.
-    Exclui planilhas deletadas (soft delete)
+    Retorna as planilhas ativas de um usuário, paginadas.
+    Exclui planilhas deletadas (soft delete).
 
     """
 
@@ -16,9 +18,18 @@ def get_sheets_by_owner(db:Session, owner_id:str) -> list[Sheet]:
         db.query(Sheet)
         .filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
         .order_by(Sheet.created_at.desc())
+        .limit(limit)
+        .offset(offset)
         .all()
     )
 
+def count_sheets_by_owner(db: Session, owner_id: str) -> int:
+    """Conta o total de planilhas ativas do usuário (para saber se há mais a carregar)."""
+    return(
+        db.query(Sheet)
+        .filter(Sheet.owner_id == owner_id, Sheet.is_deleted ==False)
+        .count()
+    )
 
 def get_sheet_by_id(db:Session, sheet_id: str, owner_id: str) -> Sheet| None:
     """
