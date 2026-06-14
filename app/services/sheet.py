@@ -9,7 +9,8 @@ from app.repositories.sheet import(
     soft_delete_sheet,
     get_line_by_id,
     update_sheet_line,
-    bulk_create_lines
+    bulk_create_lines,
+    count_sheets_by_owner,
 )
 
 from fastapi import HTTPException, status
@@ -35,11 +36,17 @@ def _recalculate_status(sheet: Sheet) -> None:
 
 #-------------PLANILHAS--------------------------------------------
 
-def list_sheets(db: Session, owner_id: str)-> list[Sheet]:
+def list_sheets(db: Session, owner_id: str, limit: int = 10, offset: int = 0) -> list[Sheet]:
     """
     Retorna todas as planilhas ativas do usuário
     """
-    return get_sheets_by_owner(db, owner_id)
+    return get_sheets_by_owner(db, owner_id, limit, offset)
+
+
+def count_sheets(db: Session, owner_id: str)-> int:
+    """Retorna o total de planilhas do usuário."""
+    return count_sheets_by_owner(db, owner_id)
+
 
 def get_sheet(db: Session, sheet_id:str, owner_id:str) -> Sheet:
     """
@@ -322,3 +329,46 @@ def clear_all_lines(db: Session, sheet_id: str, owner_id: str) -> Sheet:
     _recalculate_status(sheet)
     update_sheet(db, sheet)
     return sheet
+
+
+
+def get_sheets_stats(db: Session, owner_id: str) -> dict:
+    """
+    Calcula estatísticas gerais das planilhas do usuário:
+    - contagem por status (total, não iniciadas, iniciadas, finalizadas)
+    - total geral (soma dos resultados de todas as planilhas)
+    Calculado no servidor para não depender da paginação no frontend.
+    """
+    sheets = get_sheets_by_owner(db, owner_id, limit=1000000, offset=0)
+
+    total = len(sheets)
+    not_started = 0
+    in_progress = 0
+    finished = 0
+    grand_total = 0.0
+
+    for sheet in sheets:
+        # Contagem por status
+        if sheet.status == SheetStatus.NOT_STARTED:
+            not_started += 1
+        elif sheet.status == SheetStatus.IN_PROGRESS:
+            in_progress += 1
+        elif sheet.status == SheetStatus.FINISHED:
+            finished += 1
+
+        # Soma dos valores das linhas
+        total_deposited = sum(float(line.deposit) for line in sheet.lines)
+        total_received = sum(float(line.withdrawal) for line in sheet.lines)
+        total_chest = sum(float(line.chest) for line in sheet.lines)
+        # Fórmula unificada: recebido - depositado + baú + salário
+        # (custos serão tratados no nível consolidado quando implementarmos a entidade Cost)
+        sheet_result = total_received - total_deposited + total_chest + float(sheet.salary)
+        grand_total += sheet_result
+
+    return {
+        "total": total,
+        "not_started": not_started,
+        "in_progress": in_progress,
+        "finished": finished,
+        "grand_total": grand_total,
+    }

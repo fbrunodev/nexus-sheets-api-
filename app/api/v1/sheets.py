@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.auth.dependencies import get_current_user
@@ -19,6 +19,8 @@ from app.services.sheet import (
     finish_sheet,
     delete_sheet,
     update_line,
+    count_sheets,
+    get_sheets_stats,
 )
 from app.services.sheet import add_lines, remove_line, clear_all_lines
 
@@ -27,8 +29,10 @@ from app.services.sheet import add_lines, remove_line, clear_all_lines
 router = APIRouter(prefix="/sheets", tags=["Sheets"])
 
 
-@router.get("/",  response_model=list[SheetResponse])
+@router.get("/")
 def get_sheets(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_user: User =Depends(get_current_user),
 ):
@@ -37,9 +41,28 @@ def get_sheets(
     Lista todas as planilhas do usuário autenticado.
     Exclui planilhas deletadas automaticamente
     """
+    items = list_sheets(db, current_user.id, limit, offset)
+    total = count_sheets(db, current_user.id)
 
-    return list_sheets(db, current_user.id)
+    return {
+        "items": [SheetResponse.model_validate(s) for s in items],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "has_more": offset + len(items) < total,
+    }
 
+    
+@router.get("/stats")
+def get_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Retorna estatísticas gerais das planilhas do usuário:
+    contadores por status e total geral consolidado.
+    """
+    return get_sheets_stats(db, current_user.id)
 
 @router.post("/", response_model=SheetResponse, status_code=201)
 def create_sheet(
