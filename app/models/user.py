@@ -11,15 +11,15 @@ import enum
 class UserRole(str, enum.Enum):
     ADMIN = "ADMIN"
     SUPERVISOR = "SUPERVISOR"
-    OPERADOR = "OPERADOR",
+    OPERADOR = "OPERADOR"
     USER = "USER"
 
 
 
 # Enum de tipos de plano - define o tipo de acesso do usuário
 class PlanType(str, enum.Enum):
-    LIFETIME = "LIFETIME",
-    MONTHLY = "MONTHLY",
+    LIFETIME = "LIFETIME"
+    MONTHLY = "MONTHLY"
     TRIAL = "TRIAL"
 
 

@@ -38,13 +38,7 @@ def create_activation_key(db: Session, data: ActivationKeyCreate) -> ActivationK
     Gera uma nova activation key única.
     Tenta até 5 vezes para garantir que a key seja única.
     """
-    # Valida que keys MONTHLY têm data de expiração
-    if data.type == PlanType.MONTHLY and not data.expires_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Keys do tipo MONTHLY precisam de expires_at."
-        )
-
+    
     # Tenta gerar uma key única — colisões são raras mas possíveis
     for _ in range(5):
         key_string = generate_key_string()
