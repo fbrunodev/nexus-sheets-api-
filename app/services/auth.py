@@ -112,6 +112,13 @@ def login_user(db: Session, data: UserLoginRequest) -> dict:
             detail = "Inactive account."
         )
     
+    # Valida se o plano expirou (MONTHLY e TRIAL têm data de expiração)
+    if user.plan_expires_at and user.plan_expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Seu plano expirou. Entre em contato para renovar."
+        )
+
     # Atualiza o último login do usuário
     user.last_login =  datetime.utcnow()
     update_user(db, user)
