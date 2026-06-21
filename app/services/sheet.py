@@ -1,5 +1,6 @@
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 from app.models.sheet import Sheet, SheetLine, SheetStatus
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
 from app.repositories.sheet import(
@@ -326,7 +327,20 @@ def clear_all_lines(db: Session, sheet_id: str, owner_id: str) -> Sheet:
 
 
 
-def get_sheets_stats(db: Session, owner_id: str) -> dict:
+def _period_filter(period: str) -> list:
+    now = datetime.utcnow()
+    if period == "today":
+        start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        return [Sheet.created_at >= start]
+    if period == "week":
+        return [Sheet.created_at >= now - timedelta(days=7)]
+    if period == "month":
+        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return [Sheet.created_at >= start]
+    return []
+
+
+def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
     """
     Calcula estatísticas consolidadas via SQL agregado.
     
@@ -377,6 +391,7 @@ def get_sheets_stats(db: Session, owner_id: str) -> dict:
         )
         .outerjoin(line_agg, Sheet.id == line_agg.c.sheet_id)
         .filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
+        .filter(*_period_filter(period))
         .one()
     )
 

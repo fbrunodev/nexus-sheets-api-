@@ -55,6 +55,7 @@ def get_sheets(
     
 @router.get("/stats")
 def get_stats(
+    period: str = Query(default="all", description="Período: all, month, week, today"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -62,7 +63,7 @@ def get_stats(
     Retorna estatísticas gerais das planilhas do usuário:
     contadores por status e total geral consolidado.
     """
-    return get_sheets_stats(db, current_user.id)
+    return get_sheets_stats(db, current_user.id, period)
 
 @router.post("/", response_model=SheetResponse, status_code=201)
 def create_sheet(
