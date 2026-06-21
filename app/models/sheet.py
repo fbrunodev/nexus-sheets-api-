@@ -26,7 +26,6 @@ class Sheet(Base):
     # Identificador único universal
     id: Mapped[str] = mapped_column(
         String, primary_key=True, default=lambda: str(uuid.uuid4())
-
     )
 
 
@@ -50,15 +49,6 @@ class Sheet(Base):
     status: Mapped[SheetStatus] = mapped_column(
         SAEnum(SheetStatus), default=SheetStatus.NOT_STARTED, nullable=False
     )
-
-
-    # ------------CUSTOS----------------------------------------------------
-    # Cada custo é opcional - zerado por padrão
-
-    cost_proxy :Mapped[float] = mapped_column(Numeric(10,2), default =0, nullable=False)
-    cost_sms: Mapped[float] = mapped_column(Numeric(10,2), default =0, nullable=False)
-    cost_bot : Mapped[float] = mapped_column(Numeric(10,2), default =0, nullable=False)
-    cost_fintech : Mapped[float] = mapped_column(Numeric(10,2), default =0, nullable=False)
 
 
     # Salario
@@ -106,8 +96,8 @@ class SheetLine(Base):
     __tablename__ = "sheet_lines"
 
     # Identificador único universal
-    id: Mapped[str] = mapped_column(
-        String, primary_key=True, default=lambda: str(uuid.uiid4())
+    id: Mapped[str] = mapped_column( 
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
 
 

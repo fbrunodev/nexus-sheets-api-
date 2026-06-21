@@ -54,10 +54,6 @@ class SheetUpdate(BaseModel):
     """Dados para atualizar uma planilha existente."""
     name: Optional[str] = None
     operator_id: Optional[str] = None
-    cost_proxy: Optional[float] = None
-    cost_sms: Optional[float] = None
-    cost_bot: Optional[float] = None
-    cost_fintech: Optional[float] = None
     salary: Optional[float] = None
     goal: Optional[int] = None
 
@@ -73,10 +69,6 @@ class SheetResponse(BaseModel):
     owner_id: str
     operator_id: Optional[str]
     status: SheetStatus
-    cost_proxy: float
-    cost_sms: float
-    cost_bot: float
-    cost_fintech: float
     salary: float
     created_at: datetime
     updated_at: datetime

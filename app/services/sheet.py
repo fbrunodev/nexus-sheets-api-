@@ -1,3 +1,4 @@
+from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 from app.models.sheet import Sheet, SheetLine, SheetStatus
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
@@ -143,18 +144,11 @@ def update_existing_sheet(
         sheet.name = data.name
     if data.operator_id is not None:
         sheet.operator_id = data.operator_id
-    if data.cost_proxy is not None:
-        sheet.cost_proxy = data.cost_proxy
-    if data.cost_sms is not None:
-        sheet.cost_sms = data.cost_sms
-    if data.cost_bot is not None:
-        sheet.cost_bot = data.cost_bot
-    if data.cost_fintech is not None:
-        sheet.cost_fintech = data.cost_fintech
     if data.salary is not None:
         sheet.salary = data.salary
     if data.goal is not None:
         sheet.goal = data.goal
+
 
     return update_sheet(db, sheet)
 
@@ -334,41 +328,62 @@ def clear_all_lines(db: Session, sheet_id: str, owner_id: str) -> Sheet:
 
 def get_sheets_stats(db: Session, owner_id: str) -> dict:
     """
-    Calcula estatísticas gerais das planilhas do usuário:
-    - contagem por status (total, não iniciadas, iniciadas, finalizadas)
-    - total geral (soma dos resultados de todas as planilhas)
-    Calculado no servidor para não depender da paginação no frontend.
+    Calcula estatísticas consolidadas via SQL agregado.
+    
+    Antes: carregava todas as planilhas + linhas na memória (limit=1000000).
+    Agora: uma query com JOIN e agregações — muito mais eficiente.
+    
+    Fórmula por planilha: sum(withdrawal) - sum(deposit) + sum(chest) + salary
+    Grand total: soma dos resultados de todas as planilhas do usuário.
     """
-    sheets = get_sheets_by_owner(db, owner_id, limit=1000000, offset=0)
 
-    total = len(sheets)
-    not_started = 0
-    in_progress = 0
-    finished = 0
-    grand_total = 0.0
+    # Subconsulta: agrega os valores das linhas por planilha
+    # Usamos coalesce para tratar planilhas sem linhas (retorna 0 em vez de NULL)
+    line_agg = (
+        db.query(
+            SheetLine.sheet_id,
+            func.coalesce(func.sum(SheetLine.withdrawal), 0).label("total_withdrawal"),
+            func.coalesce(func.sum(SheetLine.deposit), 0).label("total_deposit"),
+            func.coalesce(func.sum(SheetLine.chest), 0).label("total_chest"),
+        )
+        .group_by(SheetLine.sheet_id)
+        .subquery()
+    )
 
-    for sheet in sheets:
-        # Contagem por status
-        if sheet.status == SheetStatus.NOT_STARTED:
-            not_started += 1
-        elif sheet.status == SheetStatus.IN_PROGRESS:
-            in_progress += 1
-        elif sheet.status == SheetStatus.FINISHED:
-            finished += 1
-
-        # Soma dos valores das linhas
-        total_deposited = sum(float(line.deposit) for line in sheet.lines)
-        total_received = sum(float(line.withdrawal) for line in sheet.lines)
-        total_chest = sum(float(line.chest) for line in sheet.lines)
-        # Fórmula unificada: recebido - depositado + baú + salário
-        # (custos serão tratados no nível consolidado quando implementarmos a entidade Cost)
-        sheet_result = total_received - total_deposited + total_chest + float(sheet.salary)
-        grand_total += sheet_result
+    # Query principal: JOIN sheets com a subconsulta de linhas
+    # Filtra por dono e soft delete, agrega contadores e grand_total
+    result = (
+        db.query(
+            func.count(Sheet.id).label("total"),
+            func.sum(
+                case((Sheet.status == SheetStatus.NOT_STARTED, 1), else_=0)
+            ).label("not_started"),
+            func.sum(
+                case((Sheet.status == SheetStatus.IN_PROGRESS, 1), else_=0)
+            ).label("in_progress"),
+            func.sum(
+                case((Sheet.status == SheetStatus.FINISHED, 1), else_=0)
+            ).label("finished"),
+            # Grand total: soma de (withdrawal - deposit + chest + salary) por planilha
+            func.coalesce(
+                func.sum(
+                    func.coalesce(line_agg.c.total_withdrawal, 0)
+                    - func.coalesce(line_agg.c.total_deposit, 0)
+                    + func.coalesce(line_agg.c.total_chest, 0)
+                    + Sheet.salary
+                ),
+                0,
+            ).label("grand_total"),
+        )
+        .outerjoin(line_agg, Sheet.id == line_agg.c.sheet_id)
+        .filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
+        .one()
+    )
 
     return {
-        "total": total,
-        "not_started": not_started,
-        "in_progress": in_progress,
-        "finished": finished,
-        "grand_total": grand_total,
+        "total": result.total or 0,
+        "not_started": int(result.not_started or 0),
+        "in_progress": int(result.in_progress or 0),
+        "finished": int(result.finished or 0),
+        "grand_total": float(result.grand_total or 0),
     }
