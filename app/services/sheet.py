@@ -39,16 +39,18 @@ def _recalculate_status(sheet: Sheet) -> None:
 
 #-------------PLANILHAS--------------------------------------------
 
-def list_sheets(db: Session, owner_id: str, limit: int = 10, offset: int = 0) -> list[Sheet]:
-    """
-    Retorna todas as planilhas ativas do usuário
-    """
-    return get_sheets_by_owner(db, owner_id, limit, offset)
+def list_sheets(
+    db: Session, owner_id: str, limit: int = 10, offset: int = 0,
+    status: str | None = None, search: str | None = None,
+) -> list[Sheet]:
+    return get_sheets_by_owner(db, owner_id, limit, offset, status, search)
 
 
-def count_sheets(db: Session, owner_id: str)-> int:
-    """Retorna o total de planilhas do usuário."""
-    return count_sheets_by_owner(db, owner_id)
+def count_sheets(
+    db: Session, owner_id: str,
+    status: str | None = None, search: str | None = None,
+) -> int:
+    return count_sheets_by_owner(db, owner_id, status, search)
 
 
 def get_sheet(db: Session, sheet_id:str, owner_id:str) -> Sheet:
