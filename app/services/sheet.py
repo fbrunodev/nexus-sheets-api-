@@ -230,6 +230,8 @@ def update_line(
         line.withdrawal = data.withdrawal
     if data.chest is not None:
         line.chest = data.chest
+    if data.bonus is not None:
+        line.bonus = data.bonus
 
     updated_line = update_sheet_line(db, line)
 

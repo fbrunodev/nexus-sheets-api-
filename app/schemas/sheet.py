@@ -19,6 +19,7 @@ class SheetLineUpdate(BaseModel):
     deposit: Optional[float] = None
     withdrawal: Optional[float] = None
     chest: Optional[float] = None
+    bonus: Optional[float] = None
 
 
 class SheetLineResponse(BaseModel):
@@ -31,8 +32,7 @@ class SheetLineResponse(BaseModel):
     deposit: float
     withdrawal: float
     chest: float
-    # Resultado calculado automaticamente: saque + baú - deposito
-
+    bonus: float
     result: float
     created_at: datetime
 

@@ -119,7 +119,10 @@ class SheetLine(Base):
     # Valor em báu
     chest: Mapped[float] = mapped_column(Numeric(10,2), default=0, nullable=False)
 
-    # Resultado calculado automaticamente: saque + baú - depósito
+    # Bônus da operação
+    bonus: Mapped[float] = mapped_column(Numeric(10,2), default=0, nullable=False)
+
+    # Resultado calculado automaticamente: saque + baú + bônus - depósito
     result: Mapped[float] = mapped_column(Numeric(10,2), default=0, nullable=False)
 
 
