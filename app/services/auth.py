@@ -44,7 +44,7 @@ def register_user(db: Session, data: UserRegisterRequest) -> User:
     if activation_key.is_used:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="key already exists."
+            detail="Key already used."
         )
     
     # Valida se a chave não está expirada
