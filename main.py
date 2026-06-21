@@ -8,6 +8,7 @@ from app.api.v1.operators import router as operators_router
 from app.api.v1.admin import router as admin_router
 from app.api.v1 import platforms
 from app.api.v1.costs import router as costs_router
+from app.api.v1.push import router as push_router
 
 app = FastAPI(
     title = settings.APP_NAME,
@@ -37,6 +38,7 @@ app.include_router(operators_router, prefix="/api/v1")
 app.include_router(admin_router, prefix="/api/v1")
 app.include_router(platforms.router, prefix="/api/v1")
 app.include_router(costs_router, prefix="/api/v1")
+app.include_router(push_router, prefix="/api/v1")
 @app.get("/health")
 def health_check():
     """

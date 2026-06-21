@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  * 7 # 7 dias
 
+    # VAPID (Web Push)
+    VAPID_PUBLIC_KEY: str = ""
+    VAPID_PRIVATE_KEY: str = ""
+    VAPID_CLAIMS_EMAIL: str = ""
+
     class Config:
         env_file = ".env"
         case_sensitive = True
