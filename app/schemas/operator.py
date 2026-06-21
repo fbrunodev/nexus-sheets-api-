@@ -6,9 +6,9 @@ from app.models.user import UserRole
 
 class OperatorCreate(BaseModel):
     """Dados para criar um novo operador."""
+    name: str
     email: EmailStr
     password: str
-    name: Optional[str] = None
 
 
 class OperatorResponse(BaseModel):
@@ -16,6 +16,7 @@ class OperatorResponse(BaseModel):
     model_config = {"from_attributes": True}
 
     id: str
+    name: Optional[str]
     email: str
     role: UserRole
     is_active: bool

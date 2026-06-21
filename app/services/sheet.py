@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from app.models.sheet import Sheet, SheetLine, SheetStatus
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
+from app.services.cost import get_total_costs
 from app.repositories.sheet import(
     get_sheets_by_owner,
     get_sheet_by_id,
@@ -395,10 +396,18 @@ def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
         .one()
     )
 
+    now = datetime.utcnow()
+    if period == "all":
+        total_costs = get_total_costs(db, owner_id, month=None, year=None)
+    else:
+        total_costs = get_total_costs(db, owner_id, month=now.month, year=now.year)
+
+    grand_total = float(result.grand_total or 0) - total_costs
+
     return {
         "total": result.total or 0,
         "not_started": int(result.not_started or 0),
         "in_progress": int(result.in_progress or 0),
         "finished": int(result.finished or 0),
-        "grand_total": float(result.grand_total or 0),
+        "grand_total": grand_total,
     }
