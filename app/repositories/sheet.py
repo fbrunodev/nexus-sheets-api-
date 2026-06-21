@@ -1,3 +1,4 @@
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.sheet import Sheet, SheetLine, SheetStatus
 from datetime import datetime
@@ -6,30 +7,29 @@ from datetime import datetime
 #------------------SHEET----------------------------------------
 
 def get_sheets_by_owner(
-    db:Session, owner_id:str, limit: int=20, offset: int=0
+    db: Session, owner_id: str, limit: int = 20, offset: int = 0,
+    status: str | None = None, search: str | None = None,
 ) -> list[Sheet]:
-    """
-    Retorna as planilhas ativas de um usuário, paginadas.
-    Exclui planilhas deletadas (soft delete).
+    """Retorna as planilhas ativas de um usuário, paginadas, com filtros opcionais."""
+    query = db.query(Sheet).filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
+    if status:
+        query = query.filter(Sheet.status == status)
+    if search:
+        query = query.filter(Sheet.name.ilike(f"%{search}%"))
+    return query.order_by(Sheet.created_at.desc()).offset(offset).limit(limit).all()
 
-    """
 
-    return (
-        db.query(Sheet)
-        .filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
-        .order_by(Sheet.created_at.desc())
-        .limit(limit)
-        .offset(offset)
-        .all()
-    )
-
-def count_sheets_by_owner(db: Session, owner_id: str) -> int:
-    """Conta o total de planilhas ativas do usuário (para saber se há mais a carregar)."""
-    return(
-        db.query(Sheet)
-        .filter(Sheet.owner_id == owner_id, Sheet.is_deleted ==False)
-        .count()
-    )
+def count_sheets_by_owner(
+    db: Session, owner_id: str,
+    status: str | None = None, search: str | None = None,
+) -> int:
+    """Conta o total de planilhas ativas do usuário, respeitando os filtros."""
+    query = db.query(func.count(Sheet.id)).filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
+    if status:
+        query = query.filter(Sheet.status == status)
+    if search:
+        query = query.filter(Sheet.name.ilike(f"%{search}%"))
+    return query.scalar()
 
 def get_sheet_by_id(db:Session, sheet_id: str, owner_id: str) -> Sheet| None:
     """
