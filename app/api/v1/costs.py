@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.auth.dependencies import get_current_user
 from app.models.user import User, UserRole
 from app.schemas.cost import CostTypeCreate, CostTypeResponse, CostCreate, CostResponse
+from app.models.cost import CostType
 from app.services.cost import (
     list_cost_types,
     create_cost_type,
@@ -60,6 +61,20 @@ def create_cost_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     return create_cost(db, data, current_user.id)
+
+
+@router.delete("/types/{cost_type_id}", status_code=204)
+def delete_cost_type_endpoint(
+    cost_type_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    require_admin(current_user)
+    cost_type = db.query(CostType).filter(CostType.id == cost_type_id).first()
+    if not cost_type:
+        raise HTTPException(status_code=404, detail="Tipo de custo não encontrado.")
+    db.delete(cost_type)
+    db.commit()
 
 
 @router.delete("/{cost_id}", status_code=204)
