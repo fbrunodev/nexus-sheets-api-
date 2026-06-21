@@ -102,7 +102,7 @@ def update_sheet_line(db: Session, line: SheetLine) -> SheetLine:
     Resultado = saque + baú - depósito
     """
 
-    line.result = float(line.withdrawal) + float(line.chest) - float(line.deposit)
+    line.result = float(line.withdrawal) - float(line.deposit) + float(line.chest) + float(line.bonus)
     db.commit()
     db.refresh(line)
     return line
