@@ -75,33 +75,4 @@ class SheetResponse(BaseModel):
     lines: List[SheetLineResponse] = []
     goal: int
     platform_id: Optional[str] = None
-    #Campos calculados dinamicamente
-
-    @property
-    def total_deposited(self) -> float:
-        """Total depositado em todas as linhas"""
-        return sum(line.deposit for line in self.lines)
-    
-
-    @property
-    def total_received(self) -> float:
-        """Total recebido (saques) em todas as linhas."""
-        return sum(line.withdrawal for line in self.lines)
-    
-
-    @property
-    def total_chest(self) -> float:
-        """Total em baús em todas as linhas"""
-        return sum(line.chest for line in self.lines)
-    
-
-    @property
-    def total_costs(self) -> float:
-        """Soma de todos os custos operacionais"""
-        return self.cost_proxy + self.cost_sms + self.cost_bot + self.cost_fintech
-    
-    @property
-    def final_result(self) -> float:
-        """Resultado final: recebido + baú - depositado- custos"""
-        return (self.total_received - abs(self.total_deposited) ) + self.salary + self.total_chest
     

@@ -92,11 +92,11 @@ def get_line_by_id(db: Session, line_id:str, sheet_id: str) -> SheetLine | None:
     """Busca uma linha pelo Id garantido que pertence a planilha"""
     return(
         db.query(SheetLine)
-        .filter(SheetLine.id == line_id == line_id, SheetLine.sheet_id == sheet_id)
+        .filter(SheetLine.id == line_id, SheetLine.sheet_id == sheet_id)
         .first()
     )
 
-def update_sheet_line(db: Session, line: SheetLine) -> SheetStatus:
+def update_sheet_line(db: Session, line: SheetLine) -> SheetLine:
     """
     Salva alterações em uma linha e recalcula o resultado.
     Resultado = saque + baú - depósito
