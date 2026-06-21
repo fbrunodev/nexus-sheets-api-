@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from app.models.sheet import Sheet, SheetLine, SheetStatus
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
 from app.services.cost import get_total_costs
+from app.services.push import send_push_to_user
 from app.repositories.sheet import(
     get_sheets_by_owner,
     get_sheet_by_id,
@@ -174,7 +175,16 @@ def finish_sheet(db: Session, sheet_id: str, owner_id:str) -> Sheet:
         )
     
     sheet.status = SheetStatus.FINISHED
-    return update_sheet(db, sheet)
+    updated = update_sheet(db, sheet)
+
+    total_withdrawal = sum(float(l.withdrawal) for l in sheet.lines)
+    total_deposit = sum(float(l.deposit) for l in sheet.lines)
+    total_chest = sum(float(l.chest) for l in sheet.lines)
+    result = total_withdrawal - total_deposit + total_chest + float(sheet.salary)
+    result_str = f"+R$ {result:,.2f}" if result >= 0 else f"-R$ {abs(result):,.2f}"
+    send_push_to_user(db, sheet.owner_id, "Nexus Sheets", f"{sheet.name} finalizada! Resultado: {result_str}")
+
+    return updated
 
 
 def delete_sheet(db: Session, sheet_id: str, owner_id: str) -> None:

@@ -15,4 +15,5 @@ dependencies = [
     "python-multipart>=0.0.29",
     "sqlalchemy>=2.0.50",
     "uvicorn[standard]>=0.48.0",
+    "pywebpush>=2.3.0",
 ]
