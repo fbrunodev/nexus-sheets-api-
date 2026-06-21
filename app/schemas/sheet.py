@@ -80,7 +80,7 @@ class SheetResponse(BaseModel):
     @property
     def total_deposited(self) -> float:
         """Total depositado em todas as linhas"""
-        return sum(line.withdrawal for line in self.lines)
+        return sum(line.deposit for line in self.lines)
     
 
     @property
