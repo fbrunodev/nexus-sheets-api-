@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum
+from sqlalchemy import String, Boolean, DateTime, Enum as SAEnum, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from app.core.database import Base
 import enum
@@ -38,6 +38,9 @@ class User(Base):
 
     # Email do usuário - usado para login e comunicação
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+
+    # Nome de exibição do usuário
+    name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     
 
     # Senha armazenada como hash bcrypt - nunca em texto puro
@@ -69,3 +72,6 @@ class User(Base):
 
     # Último login - útil para auditoria e segurança
     last_login: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+
+    # ID do admin/supervisor que criou este operador
+    owner_id: Mapped[str | None] = mapped_column(String, ForeignKey("users.id"), nullable=True)
