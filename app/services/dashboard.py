@@ -69,11 +69,6 @@ def get_dashboard_data(
     })
 
     for sheet in sheets:
-        # Acumula custos e salário de cada planilha
-        cost_proxy += float(sheet.cost_proxy)
-        cost_sms += float(sheet.cost_sms)
-        cost_bot += float(sheet.cost_bot)
-        cost_fintech += float(sheet.cost_fintech)
         total_salary += float(sheet.salary)
 
         # Chave do mês no formato "YYYY-MM"
@@ -92,10 +87,10 @@ def get_dashboard_data(
             monthly_data[month_key]["deposited"] += float(line.deposit)
             monthly_data[month_key]["received"] += float(line.withdrawal)
 
-    total_costs = cost_proxy + cost_sms + cost_bot + cost_fintech
+    total_costs = 0.0
 
-    # Resultado final: recebido - depositado + baú + salário - custos
-    final_result = total_received - total_deposited + total_chest + total_salary - total_costs
+    # Resultado final: recebido - depositado + baú + salário
+    final_result = total_received - total_deposited + total_chest + total_salary
 
     # Calcula o resultado por mês para o gráfico
     for month_key in monthly_data:

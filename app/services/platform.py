@@ -52,3 +52,4 @@ def remove_platform(db: Session, platform_id: str) -> None:
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plataforma não encontrada"
         )
+    delete_platform(db, platform)
