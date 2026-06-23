@@ -180,7 +180,8 @@ def finish_sheet(db: Session, sheet_id: str, owner_id:str) -> Sheet:
     total_withdrawal = sum(float(l.withdrawal) for l in sheet.lines)
     total_deposit = sum(float(l.deposit) for l in sheet.lines)
     total_chest = sum(float(l.chest) for l in sheet.lines)
-    result = total_withdrawal - total_deposit + total_chest + float(sheet.salary)
+    total_bonus = sum(float(l.bonus) for l in sheet.lines)
+    result = total_withdrawal - total_deposit + total_chest + total_bonus + float(sheet.salary)
     result_str = f"+R$ {result:,.2f}" if result >= 0 else f"-R$ {abs(result):,.2f}"
     send_push_to_user(db, sheet.owner_id, "Nexus Sheets", f"{sheet.name} finalizada! Resultado: {result_str}")
 
@@ -374,6 +375,7 @@ def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
             func.coalesce(func.sum(SheetLine.withdrawal), 0).label("total_withdrawal"),
             func.coalesce(func.sum(SheetLine.deposit), 0).label("total_deposit"),
             func.coalesce(func.sum(SheetLine.chest), 0).label("total_chest"),
+            func.coalesce(func.sum(SheetLine.bonus), 0).label("total_bonus"),
         )
         .group_by(SheetLine.sheet_id)
         .subquery()
@@ -399,6 +401,7 @@ def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
                     func.coalesce(line_agg.c.total_withdrawal, 0)
                     - func.coalesce(line_agg.c.total_deposit, 0)
                     + func.coalesce(line_agg.c.total_chest, 0)
+                    + func.coalesce(line_agg.c.total_bonus, 0)
                     + Sheet.salary
                 ),
                 0,
