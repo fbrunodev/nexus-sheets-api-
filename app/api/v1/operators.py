@@ -11,10 +11,10 @@ router = APIRouter(prefix="/operators", tags=["Operators"])
 
 
 def require_admin_or_supervisor(current_user: User) -> User:
-    if current_user.role not in [UserRole.ADMIN, UserRole.SUPERVISOR]:
+    if current_user.role == UserRole.OPERADOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Acesso negado. Requer role ADMIN ou SUPERVISOR."
+            detail="Operadores não podem criar outros operadores."
         )
     return current_user
 
