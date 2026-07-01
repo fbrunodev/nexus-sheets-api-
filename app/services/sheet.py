@@ -5,6 +5,7 @@ from app.models.sheet import Sheet, SheetLine, SheetStatus
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
 from app.services.cost import get_total_costs
 from app.services.push import send_push_to_user
+from app.models.user import User, UserRole
 from app.repositories.sheet import(
     get_sheets_by_owner,
     get_sheet_by_id,
@@ -130,6 +131,18 @@ def create_new_sheet(db: Session, data: SheetCreate, owner_id:str) -> Sheet:
     _recalculate_status(created_sheet)
     update_sheet(db, created_sheet)
 
+    # Notifica admin se o criador for um operador
+    sheet_owner = db.query(User).filter(User.id == owner_id).first()
+    if sheet_owner and sheet_owner.role == UserRole.OPERADOR and sheet_owner.owner_id:
+        operator_name = sheet_owner.name or sheet_owner.email
+        deposit_count = len(created_sheet.lines) if data.deposits else 0
+        platform_name = created_sheet.name
+        if deposit_count > 0:
+            msg = f"{operator_name} iniciou {deposit_count} dep na {platform_name}"
+        else:
+            msg = f"{operator_name} criou uma planilha na {platform_name}"
+        send_push_to_user(db, sheet_owner.owner_id, "Nexus Sheets", msg)
+
     return created_sheet
 
 
@@ -184,6 +197,12 @@ def finish_sheet(db: Session, sheet_id: str, owner_id:str) -> Sheet:
     result = total_withdrawal - total_deposit + total_chest + total_bonus + float(sheet.salary)
     result_str = f"+R$ {result:,.2f}" if result >= 0 else f"-R$ {abs(result):,.2f}"
     send_push_to_user(db, sheet.owner_id, "Nexus Sheets", f"{sheet.name} finalizada! Resultado: {result_str}")
+
+    sheet_owner = db.query(User).filter(User.id == sheet.owner_id).first()
+    if sheet_owner and sheet_owner.role == UserRole.OPERADOR and sheet_owner.owner_id:
+        operator_name = sheet_owner.name or sheet_owner.email
+        admin_message = f"{operator_name} finalizou {sheet.name}! Resultado: {result_str}"
+        send_push_to_user(db, sheet_owner.owner_id, "Nexus Sheets", admin_message)
 
     return updated
 
@@ -420,6 +439,39 @@ def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
         total_costs = get_total_costs(db, owner_id, month=now.month, year=now.year)
 
     grand_total = float(result.grand_total or 0) - total_costs
+
+    operator_ids = [u.id for u in db.query(User).filter(User.owner_id == owner_id, User.role == UserRole.OPERADOR).all()]
+    if operator_ids:
+        for op_id in operator_ids:
+            op_costs = get_total_costs(db, op_id, month=None, year=None) if period == "all" else get_total_costs(db, op_id, month=now.month, year=now.year)
+            op_line_agg = (
+                db.query(
+                    SheetLine.sheet_id,
+                    func.coalesce(func.sum(SheetLine.withdrawal), 0).label("total_withdrawal"),
+                    func.coalesce(func.sum(SheetLine.deposit), 0).label("total_deposit"),
+                    func.coalesce(func.sum(SheetLine.chest), 0).label("total_chest"),
+                    func.coalesce(func.sum(SheetLine.bonus), 0).label("total_bonus"),
+                )
+                .group_by(SheetLine.sheet_id)
+                .subquery()
+            )
+            op_result = (
+                db.query(
+                    func.coalesce(
+                        func.sum(
+                            func.coalesce(op_line_agg.c.total_withdrawal, 0)
+                            - func.coalesce(op_line_agg.c.total_deposit, 0)
+                            + func.coalesce(op_line_agg.c.total_chest, 0)
+                            + func.coalesce(op_line_agg.c.total_bonus, 0)
+                            + Sheet.salary
+                        ), 0
+                    ).label("op_total")
+                )
+                .outerjoin(op_line_agg, Sheet.id == op_line_agg.c.sheet_id)
+                .filter(Sheet.owner_id == op_id, Sheet.is_deleted == False)
+                .scalar()
+            )
+            grand_total += float(op_result or 0) - op_costs
 
     return {
         "total": result.total or 0,

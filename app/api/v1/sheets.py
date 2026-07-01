@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.auth.dependencies import get_current_user
 from app.models.user import User
+from app.models.sheet import Sheet
 from app.schemas.sheet import(
     SheetCreate,
     SheetUpdate,
@@ -74,6 +76,40 @@ def create_sheet(
     """
 
     return create_new_sheet(db,data, current_user.id)
+
+
+@router.get("/operator-sheets")
+def get_operator_sheets(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna planilhas de todos os operadores vinculados ao usuário autenticado."""
+    from app.models.user import UserRole
+    operators = db.query(User).filter(User.owner_id == current_user.id, User.role == UserRole.OPERADOR).all()
+    operator_ids = [op.id for op in operators]
+
+    if not operator_ids:
+        return {"items": [], "total": 0, "operators": []}
+
+    sheets = db.query(Sheet).filter(
+        Sheet.owner_id.in_(operator_ids),
+        Sheet.is_deleted == False
+    ).order_by(Sheet.created_at.desc()).offset(offset).limit(limit).all()
+
+    total = db.query(func.count(Sheet.id)).filter(
+        Sheet.owner_id.in_(operator_ids),
+        Sheet.is_deleted == False
+    ).scalar()
+
+    operator_map = {op.id: (op.name or op.email) for op in operators}
+
+    return {
+        "items": [{"sheet": SheetResponse.model_validate(s), "operator_name": operator_map.get(s.owner_id, "?")} for s in sheets],
+        "total": total,
+        "operators": [{"id": op.id, "name": op.name or op.email} for op in operators]
+    }
 
 
 @router.get("/{sheet_id}", response_model=SheetResponse)
