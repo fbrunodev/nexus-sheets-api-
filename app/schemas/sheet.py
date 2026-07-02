@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime
-from app.models.sheet import SheetStatus
+from app.models.sheet import SheetStatus, CooperationType
 
 
 # --------------SHEET LINE SCHEMAS-------------------------------
@@ -48,6 +48,7 @@ class SheetCreate(BaseModel):
     goal: int = 0
     deposits: Optional[list[float]] = None
     platform_id: Optional[str] = None
+    cooperation_type: Optional[str] = "META"
 
 
 class SheetUpdate(BaseModel):
@@ -75,4 +76,5 @@ class SheetResponse(BaseModel):
     lines: List[SheetLineResponse] = []
     goal: int
     platform_id: Optional[str] = None
+    cooperation_type: CooperationType = CooperationType.META
     
