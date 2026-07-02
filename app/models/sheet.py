@@ -12,6 +12,12 @@ class SheetStatus(str, enum.Enum):
     IN_PROGRESS = "IN_PROGRESS"
     FINISHED = "FINISHED"
 
+
+class CooperationType(str, enum.Enum):
+    META = "META"
+    BAU = "BAU"
+    RECARGA = "RECARGA"
+
 class Sheet(Base):
     """
     Modelo de planilha operacional.
@@ -34,6 +40,11 @@ class Sheet(Base):
 
     # Meta da planilha — objetivo numérico a atingir (valor inteiro)
     goal: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
+    # Tipo de cooperação: META, BAU ou RECARGA
+    cooperation_type: Mapped[CooperationType] = mapped_column(
+        SAEnum(CooperationType), default=CooperationType.META, nullable=False
+    )
 
     # Dono da planilha - usuário que criou
     owner_id: Mapped[str] = mapped_column(

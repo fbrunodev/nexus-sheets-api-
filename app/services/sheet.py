@@ -1,7 +1,7 @@
 from sqlalchemy import func, case
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
-from app.models.sheet import Sheet, SheetLine, SheetStatus
+from app.models.sheet import Sheet, SheetLine, SheetStatus, CooperationType
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
 from app.services.cost import get_total_costs
 from app.services.push import send_push_to_user
@@ -63,13 +63,20 @@ def get_sheet(db: Session, sheet_id:str, owner_id:str) -> Sheet:
 
     sheet = get_sheet_by_id(db, sheet_id, owner_id)
 
+    if not sheet:
+        # Verifica se o usuário é admin/dono do operador que criou a planilha
+        sheet = db.query(Sheet).filter(Sheet.id == sheet_id, Sheet.is_deleted == False).first()
+        if sheet:
+            sheet_owner = db.query(User).filter(User.id == sheet.owner_id).first()
+            if not sheet_owner or sheet_owner.owner_id != owner_id:
+                sheet = None
 
     if not sheet:
         raise HTTPException(
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail = " Sheet not Found."
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Sheet not Found."
         )
-    
+
     return sheet
 
 def create_new_sheet(db: Session, data: SheetCreate, owner_id:str) -> Sheet:
@@ -87,6 +94,7 @@ def create_new_sheet(db: Session, data: SheetCreate, owner_id:str) -> Sheet:
         operator_id=data.operator_id,
         goal=data.goal,
         platform_id=data.platform_id,
+        cooperation_type=data.cooperation_type or CooperationType.META,
     )
 
     # Persiste a planilha primeiro para ter o ID disponível
@@ -157,6 +165,9 @@ def update_existing_sheet(
 
     sheet = get_sheet(db, sheet_id, owner_id)
 
+    if sheet.owner_id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para editar esta planilha.")
+
     # Atualiza apenas os campos enviados - ignora os nulos
     if data.name is not None:
         sheet.name = data.name
@@ -178,6 +189,9 @@ def finish_sheet(db: Session, sheet_id: str, owner_id:str) -> Sheet:
     """
 
     sheet = get_sheet(db, sheet_id, owner_id)
+
+    if sheet.owner_id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para editar esta planilha.")
 
     # Valida se a planilha já está finalizada
 
@@ -226,6 +240,8 @@ def update_line(
     # Garante que a planilha existe e pertence ao usuário
     sheet = get_sheet(db, sheet_id, owner_id)
 
+    if sheet.owner_id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para editar esta planilha.")
 
     # Bloqueia edição de planilhas finalizadas
     if sheet.status == SheetStatus.FINISHED:
@@ -273,6 +289,9 @@ def add_lines(db: Session, sheet_id: str, owner_id: str, quantity: int) -> Sheet
     """
     sheet = get_sheet(db, sheet_id, owner_id)
 
+    if sheet.owner_id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para editar esta planilha.")
+
     # Bloqueia edição de planilhas finalizadas
     if sheet.status == SheetStatus.FINISHED:
         raise HTTPException(
@@ -309,6 +328,9 @@ def remove_line(db: Session, sheet_id: str, line_id: str, owner_id: str) -> Shee
     """
     sheet = get_sheet(db, sheet_id, owner_id)
 
+    if sheet.owner_id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para editar esta planilha.")
+
     if sheet.status == SheetStatus.FINISHED:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -338,6 +360,9 @@ def clear_all_lines(db: Session, sheet_id: str, owner_id: str) -> Sheet:
     Mantém as linhas, apenas limpa depósito, saque, baú e resultado.
     """
     sheet = get_sheet(db, sheet_id, owner_id)
+
+    if sheet.owner_id != owner_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Você não tem permissão para editar esta planilha.")
 
     if sheet.status == SheetStatus.FINISHED:
         raise HTTPException(
