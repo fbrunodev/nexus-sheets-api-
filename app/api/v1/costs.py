@@ -84,3 +84,31 @@ def delete_cost_endpoint(
     current_user: User = Depends(get_current_user),
 ):
     delete_cost(db, cost_id, current_user.id)
+
+
+@router.get("/stats")
+def get_cost_stats(
+    period: str = Query("all"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    from app.models.cost import Cost
+    from sqlalchemy import func
+    from datetime import datetime
+
+    now = datetime.utcnow()
+    query = db.query(
+        CostType.name,
+        func.sum(Cost.value).label("total")
+    ).join(Cost, Cost.cost_type_id == CostType.id).filter(
+        Cost.owner_id == current_user.id
+    )
+
+    if period in ("today", "month"):
+        query = query.filter(Cost.year == now.year, Cost.month == now.month)
+    elif period == "week":
+        query = query.filter(Cost.year == now.year, Cost.month == now.month)
+
+    results = query.group_by(CostType.name).all()
+
+    return [{"name": r.name, "value": float(r.total)} for r in results]
