@@ -40,11 +40,8 @@ app.include_router(platforms.router, prefix="/api/v1")
 app.include_router(costs_router, prefix="/api/v1")
 app.include_router(push_router, prefix="/api/v1")
 @app.get("/health")
+@app.head("/health")
 def health_check():
-    """
-    Endpoint de verificação de saúde do servidor
-    Usado para confirmar que a API está respondendo
-    """
     return {
         "status": "ok",
         "app": settings.APP_NAME,
