@@ -1,14 +1,24 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.sheet import Sheet, SheetLine, SheetStatus
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 #------------------SHEET----------------------------------------
 
+def _apply_period_filter(query, period: str | None):
+    if period == "month":
+        now = datetime.utcnow()
+        start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        return query.filter(Sheet.created_at >= start)
+    elif period == "week":
+        return query.filter(Sheet.created_at >= datetime.utcnow() - timedelta(days=7))
+    return query
+
+
 def get_sheets_by_owner(
     db: Session, owner_id: str, limit: int = 20, offset: int = 0,
-    status: str | None = None, search: str | None = None,
+    status: str | None = None, search: str | None = None, period: str | None = None,
 ) -> list[Sheet]:
     """Retorna as planilhas ativas de um usuário, paginadas, com filtros opcionais."""
     query = db.query(Sheet).filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
@@ -16,12 +26,13 @@ def get_sheets_by_owner(
         query = query.filter(Sheet.status == status)
     if search:
         query = query.filter(Sheet.name.ilike(f"%{search}%"))
+    query = _apply_period_filter(query, period)
     return query.order_by(Sheet.created_at.desc()).offset(offset).limit(limit).all()
 
 
 def count_sheets_by_owner(
     db: Session, owner_id: str,
-    status: str | None = None, search: str | None = None,
+    status: str | None = None, search: str | None = None, period: str | None = None,
 ) -> int:
     """Conta o total de planilhas ativas do usuário, respeitando os filtros."""
     query = db.query(func.count(Sheet.id)).filter(Sheet.owner_id == owner_id, Sheet.is_deleted == False)
@@ -29,6 +40,7 @@ def count_sheets_by_owner(
         query = query.filter(Sheet.status == status)
     if search:
         query = query.filter(Sheet.name.ilike(f"%{search}%"))
+    query = _apply_period_filter(query, period)
     return query.scalar()
 
 def get_sheet_by_id(db:Session, sheet_id: str, owner_id: str) -> Sheet| None:

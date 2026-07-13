@@ -37,11 +37,13 @@ def get_sheets(
     offset: int = Query(0, ge=0),
     status: str = Query(None),
     search: str = Query(None),
+    period: str = Query(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    items = list_sheets(db, current_user.id, limit, offset, status or None, search or None)
-    total = count_sheets(db, current_user.id, status or None, search or None)
+    period_val = period if period in ("month", "week") else None
+    items = list_sheets(db, current_user.id, limit, offset, status or None, search or None, period_val)
+    total = count_sheets(db, current_user.id, status or None, search or None, period_val)
 
     return {
         "items": [SheetResponse.model_validate(s) for s in items],
