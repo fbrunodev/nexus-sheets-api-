@@ -43,16 +43,16 @@ def _recalculate_status(sheet: Sheet) -> None:
 
 def list_sheets(
     db: Session, owner_id: str, limit: int = 10, offset: int = 0,
-    status: str | None = None, search: str | None = None,
+    status: str | None = None, search: str | None = None, period: str | None = None,
 ) -> list[Sheet]:
-    return get_sheets_by_owner(db, owner_id, limit, offset, status, search)
+    return get_sheets_by_owner(db, owner_id, limit, offset, status, search, period)
 
 
 def count_sheets(
     db: Session, owner_id: str,
-    status: str | None = None, search: str | None = None,
+    status: str | None = None, search: str | None = None, period: str | None = None,
 ) -> int:
-    return count_sheets_by_owner(db, owner_id, status, search)
+    return count_sheets_by_owner(db, owner_id, status, search, period)
 
 
 def get_sheet(db: Session, sheet_id:str, owner_id:str) -> Sheet:
