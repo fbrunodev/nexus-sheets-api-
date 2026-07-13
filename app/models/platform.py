@@ -11,10 +11,10 @@ class Platform(Base):
     Entidade global — cadastrada pelo admin, usada por todos os usuários.
     """
 
-    __tablename__ = "plataforms"
+    __tablename__ = "platforms"
 
     id: Mapped[str] = mapped_column(
-        String, primary_key=True, default = lambda: str(uuid.uiid4())
+        String, primary_key=True, default=lambda: str(uuid.uuid4())
     )
     name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
