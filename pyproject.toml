@@ -26,6 +26,7 @@ dev = [
     "mypy>=2.3.1",
     "pytest>=9.1.1",
     "sqlalchemy[mypy]>=2.0.50",
+    "types-python-jose>=3.5.0.20260408",
 ]
 
 [tool.pytest.ini_options]
