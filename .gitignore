@@ -16,7 +16,7 @@ alembic/versions/__pycache__/
 
 # VS Code
 .vscode/
-
+*.log
 # Sistema
 .DS_Store
 Thumbs.db
