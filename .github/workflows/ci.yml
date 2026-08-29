@@ -42,3 +42,10 @@ jobs:
             DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nexus_test
             SECRET_KEY: test-secret-key-for-ci
           run: uv run pytest -v
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Render Deploy
+        run: curl -X POST ${{secrets.RENDER_DEPLOY_HOOK_URL}}
