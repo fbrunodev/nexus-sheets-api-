@@ -11,12 +11,13 @@ __pycache__/
 *.pyd
 .Python
 
-# Alembic
-alembic/versions/__pycache__/
+# Logs
+*.log
+app/logs/
 
 # VS Code
 .vscode/
-*.log
+
 # Sistema
 .DS_Store
 Thumbs.db
