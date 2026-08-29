@@ -94,7 +94,7 @@ def get_operator_sheets(
     # Raw queries used here intentionally — no repository abstraction for this
     # cross-entity read. Candidate for extraction if the query grows more complex.
     operators = db.query(User).filter(
-        User.owner_id == current_user.id, User.role == UserRole.OPERATOR
+        User.owner_id == current_user.id, User.role == UserRole.OPERADOR
     ).all()
     operator_ids = [op.id for op in operators]
 

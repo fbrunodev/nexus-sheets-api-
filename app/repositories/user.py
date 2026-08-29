@@ -17,14 +17,14 @@ class UserRepository:
     def get_operator_by_owner(self, owner_id: str) -> list[User]:
         return self.db.query(User).filter(
             User.owner_id == owner_id,
-            User.role == UserRole.OPERATOR
+            User.role == UserRole.OPERADOR
         ).all()
     
     def get_operator_by_id(self, operator_id: str , owner_id: str) -> User | None:
         return self.db.query(User).filter(
             User.id == operator_id,
             User.owner_id == owner_id,
-            User.role == UserRole.OPERATOR
+            User.role == UserRole.OPERADOR
         ).first()
 
     def create_user(self, user: User) -> User:

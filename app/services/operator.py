@@ -28,7 +28,7 @@ def create_operator(user_repo: UserRepository, db: Session, data: OperatorCreate
         name=data.name,
         email=data.email,
         password_hash=hash_password(data.password),
-        role=UserRole.OPERATOR,
+        role=UserRole.OPERADOR,
         is_active=True,
         plan_type=PlanType.LIFETIME,
         owner_id=owner_id,

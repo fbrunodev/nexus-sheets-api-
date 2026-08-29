@@ -141,7 +141,7 @@ def create_new_sheet(
     _recalculate_status(created_sheet)
 
     sheet_owner = db.query(User).filter(User.id == owner_id).first()
-    if sheet_owner and sheet_owner.role == UserRole.OPERATOR and sheet_owner.owner_id:
+    if sheet_owner and sheet_owner.role == UserRole.OPERADOR and sheet_owner.owner_id:
         operator_name = sheet_owner.name or sheet_owner.email
         deposit_count = len(created_sheet.lines) if data.deposits else 0
         platform_name = created_sheet.name
@@ -211,7 +211,7 @@ def finish_sheet(sheet_repo: SheetRepository, db: Session, sheet_id: str, owner_
     send_push_to_user(db, sheet.owner_id, "Nexus Sheets", f"{sheet.name} finished! Result: {result_str}")
 
     sheet_owner = db.query(User).filter(User.id == sheet.owner_id).first()
-    if sheet_owner and sheet_owner.role == UserRole.OPERATOR and sheet_owner.owner_id:
+    if sheet_owner and sheet_owner.role == UserRole.OPERADOR and sheet_owner.owner_id:
         operator_name = sheet_owner.name or sheet_owner.email
         send_push_to_user(
             db, sheet_owner.owner_id, "Nexus Sheets",
@@ -420,7 +420,7 @@ def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
 
     operator_ids = [
         u.id for u in db.query(User)
-        .filter(User.owner_id == owner_id, User.role == UserRole.OPERATOR)
+        .filter(User.owner_id == owner_id, User.role == UserRole.OPERADOR)
         .all()
     ]
 
