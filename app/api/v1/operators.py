@@ -4,17 +4,19 @@ from app.core.database import get_db
 from app.auth.dependencies import get_current_user
 from app.models.user import User, UserRole
 from app.schemas.operator import OperatorCreate, OperatorResponse
-from app.services.operator import list_operators, create_operator, delete_operator
+from app.services.operator import list_operators, create_operator, soft_delete_operator
+from app.repositories.user import UserRepository
+from app.exceptions.user_exceptions import OperatorNotFoundException, UserEmailAlreadyExistsException
 from fastapi import HTTPException
 
 router = APIRouter(prefix="/operators", tags=["Operators"])
 
 
 def require_admin_or_supervisor(current_user: User) -> User:
-    if current_user.role == UserRole.OPERADOR:
+    if current_user.role == UserRole.OPERATOR:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Operadores não podem criar outros operadores."
+            detail="Operators cannot create other operators.",
         )
     return current_user
 
@@ -24,8 +26,8 @@ def get_operators(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Lista os operadores criados pelo usuário autenticado."""
-    return list_operators(db, current_user.id)
+    user_repo = UserRepository(db)
+    return list_operators(user_repo, current_user.id)
 
 
 @router.post("/", response_model=OperatorResponse, status_code=201)
@@ -34,9 +36,12 @@ def create_new_operator(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Cria um novo operador. Requer role ADMIN ou SUPERVISOR."""
-    require_admin_or_supervisor(current_user)
-    return create_operator(db, data, current_user.id)
+    user_repo = UserRepository(db)
+    try:
+        require_admin_or_supervisor(current_user)
+        return create_operator(user_repo, db, data, current_user.id)
+    except UserEmailAlreadyExistsException as e:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 
 @router.delete("/{operator_id}", status_code=204)
@@ -45,6 +50,9 @@ def delete_operator_endpoint(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Remove um operador. Só o criador pode remover."""
-    require_admin_or_supervisor(current_user)
-    delete_operator(db, operator_id, current_user.id)
+    user_repo = UserRepository(db)
+    try:
+        require_admin_or_supervisor(current_user)
+        soft_delete_operator(user_repo,db, operator_id, current_user.id)
+    except OperatorNotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

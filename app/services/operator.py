@@ -1,65 +1,55 @@
 from sqlalchemy.orm import Session
 from app.models.user import User, UserRole, PlanType
 from app.schemas.operator import OperatorCreate
-from app.repositories.user import get_user_by_email, create_user
+from app.repositories.user import UserRepository
 from app.core.security import hash_password
-from fastapi import HTTPException, status
 import uuid
+from app.exceptions.user_exceptions import UserEmailAlreadyExistsException, OperatorNotFoundException
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def list_operators(db: Session, owner_id: str) -> list[User]:
-    """Retorna todos os operadores criados por um admin/supervisor."""
-    return (
-        db.query(User)
-        .filter(User.role == UserRole.OPERADOR, User.owner_id == owner_id)
-        .order_by(User.created_at.desc())
-        .all()
-    )
+def list_operators(user_repo: UserRepository, owner_id: str) -> list[User]:
+    return user_repo.get_operator_by_owner(owner_id)
 
+    
+def create_operator(user_repo: UserRepository, db: Session, data: OperatorCreate, owner_id: str) -> User:
+    logger.info("Attempting to create operator")
 
-def create_operator(db: Session, data: OperatorCreate, owner_id: str) -> User:
-    """
-    Cria um novo operador vinculado ao admin/supervisor que o criou.
-    Conta já ativa, sem necessidade de activation key.
-    """
-    existing = get_user_by_email(db, data.email)
+    existing = user_repo.get_user_by_email(data.email)
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email já cadastrado."
-        )
+        logger.warning("Email already exists.")
+        raise UserEmailAlreadyExistsException("Email already exists.")
 
+    # Operators are created active with a LIFETIME plan — no activation key required.
     new_operator = User(
         id=str(uuid.uuid4()),
         name=data.name,
         email=data.email,
         password_hash=hash_password(data.password),
-        role=UserRole.OPERADOR,
+        role=UserRole.OPERATOR,
         is_active=True,
         plan_type=PlanType.LIFETIME,
         owner_id=owner_id,
     )
 
-    return create_user(db, new_operator)
-
-
-def delete_operator(db: Session, operator_id: str, owner_id: str) -> None:
-    """
-    Remove um operador. Só o admin/supervisor que o criou pode deletar.
-    """
-    operator = (
-        db.query(User)
-        .filter(
-            User.id == operator_id,
-            User.role == UserRole.OPERADOR,
-            User.owner_id == owner_id,
-        )
-        .first()
-    )
-    if not operator:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Operador não encontrado."
-        )
-    db.delete(operator)
+    user_repo.create_user(new_operator)
     db.commit()
+    db.refresh(new_operator)
+    logger.info(f"Operator {new_operator.id} created")
+    return new_operator
+
+
+def soft_delete_operator(user_repo: UserRepository, db: Session, operator_id: str, owner_id: str) -> None:
+    logger.info("Attempting to delete operator")
+
+    operator = user_repo.get_operator_by_id(operator_id, owner_id)
+    logger.info(f"operator {operator_id}")
+    if not operator:
+        logger.warning("Operator not Found.")
+        raise OperatorNotFoundException("Operator not found.")
+    operator.is_active = False
+    user_repo.update_user(operator)
+    db.commit()
+    logger.info(f"Operator {operator_id} deleted")

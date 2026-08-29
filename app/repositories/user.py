@@ -1,62 +1,53 @@
 from sqlalchemy.orm import Session
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.activation_key import ActivationKey
-from datetime import datetime
-
-#--------USER------------------------------------
-
-def get_user_by_email(db: Session, email: str) -> User | None:
-    """
-    Busca um usuário pelo email.
-    Retorna o objeto User ou None se não encontrado
-    """
-    return db.query(User).filter(User.email == email).first()
-
-def get_user_by_id(db: Session, user_id: str) -> User | None:
-    """
-    Busca um usuário pelo ID.
-    Retorna o objeto User ou None se não encontrado
-    """
-    return db.query(User).filter(User.id == user_id).first()
-
-def create_user(db: Session, user: User) -> User:
-    """
-    Persiste um novo usuário no banco de dados
-    O objeto User já deve conter suas credenciais preenchidas
-    """
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
 
 
-def update_user(db: Session, user: User) -> User:
-    """
-    Salva as alterações em um usuário existente.
-    Usado para atualizar last_login, plan_type, is_active, etc.
-    """
+class UserRepository:
+    def __init__(self, db: Session):
+        self.db = db
 
-    db.commit()
-    db.refresh(user)
-    return user
+    def get_user_by_email(self, email: str) -> User | None:
+        return self.db.query(User).filter(User.email == email).first()
 
-
-#-----------ACTIVATION KEY------------------------------------
-def get_activation_key(db: Session, key: str) -> ActivationKey | None:
-    """
-     Busca uma chave de ativação pelo valor da chave.
-    Retorna o objeto ActivationKey ou None se não encontrada.
-    """
-    return db.query(ActivationKey).filter(ActivationKey.key == key).first()
+    def get_user_by_id(self, user_id: str) -> User | None:
+        return self.db.query(User).filter(User.id == user_id).first()
     
+    # Specific methods for the role operator
+    def get_operator_by_owner(self, owner_id: str) -> list[User]:
+        return self.db.query(User).filter(
+            User.owner_id == owner_id,
+            User.role == UserRole.OPERATOR
+        ).all()
+    
+    def get_operator_by_id(self, operator_id: str , owner_id: str) -> User | None:
+        return self.db.query(User).filter(
+            User.id == operator_id,
+            User.owner_id == owner_id,
+            User.role == UserRole.OPERATOR
+        ).first()
 
-def mark_key_as_used(db: Session, activation_key: ActivationKey, user_id: str) -> ActivationKey:
-    """
-    Marca uma chave de ativação como utilizada.
-    Registra qual usuário a utilizou e quando
-    """
-    activation_key.is_used =True
-    activation_key.used_by = user_id
-    db.commit()
-    db.refresh(activation_key)
-    return activation_key
+    def create_user(self, user: User) -> User:
+        self.db.add(user)
+        return user
+
+    def update_user(self, user: User) -> User:
+        self.db.add(user)
+        return user
+
+class ActivationKeyRepository:
+    def __init__(self, db: Session):
+        self.db = db
+
+    def create_key(self, activation_key: ActivationKey) -> ActivationKey:
+        self.db.add(activation_key)
+        return activation_key
+
+    def get_activation_key(self, key: str) -> ActivationKey | None:
+        return self.db.query(ActivationKey).filter(ActivationKey.key == key).first()
+
+    def mark_key_as_used(self, activation_key: ActivationKey, user_id: str) -> ActivationKey:
+        activation_key.is_used = True
+        activation_key.used_by = user_id
+        self.db.add(activation_key)
+        return activation_key

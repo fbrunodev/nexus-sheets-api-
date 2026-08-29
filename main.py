@@ -9,6 +9,10 @@ from app.api.v1.admin import router as admin_router
 from app.api.v1 import platforms
 from app.api.v1.costs import router as costs_router
 from app.api.v1.push import router as push_router
+from app.core.logging_config import logging_config  
+
+
+logging_config()  # Configura o logging antes de criar a aplicação FastAPI
 
 app = FastAPI(
     title = settings.APP_NAME,

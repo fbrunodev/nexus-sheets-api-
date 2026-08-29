@@ -1,55 +1,50 @@
 import uuid
 from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 from app.models.platform import Platform
-from app.repositories.platform import(
-    get_all_platforms,
-    get_platform_by_id,
-    get_platform_by_name,
-    create_platform,
-    delete_platform,
+from app.repositories.platform import PlatformRepository
+from app.exceptions.platform_exceptions import (
+    PlatformAlreadyExistsException,
+    PlatformNameEmptyException,
+    PlatformNotFoundException,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def list_platforms(db: Session) -> list[Platform]:
-    """Lista todas as plataformas cadastradas."""
-    return get_all_platforms(db)
+def list_platforms(platform_repo: PlatformRepository) -> list[Platform]:
+    return platform_repo.get_all_platforms()
 
-def create_new_platform(db: Session, name: str) -> Platform:
-    """
-    Cria nova plataforma.
-    Valida que o nome não está vazio e que não existe duplicada.
-    """
+
+def create_new_platform(platform_repo: PlatformRepository, db: Session, name: str) -> Platform:
+    logger.info("Attempting to create platform")
 
     name = name.strip()
-
-
     if not name:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="O nome da plataforma não pode ser vazio"
+        logger.warning("Platform name cannot be empty.")
+        raise PlatformNameEmptyException("Platform name cannot be empty.")
 
-        )
-
-    # Verifica duplicata
-
-    existing = get_platform_by_name(db, name)
+    existing = platform_repo.get_platform_by_name(name)
     if existing:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="já existe uma plataforma com esse nome."
-        )
+        logger.warning("Platform already exists.")
+        raise PlatformAlreadyExistsException("Platform already exists.")
 
     new_platform = Platform(id=str(uuid.uuid4()), name=name)
-    return create_platform(db, new_platform)
+    platform_repo.create_platform(new_platform)
+    db.commit()
+    db.refresh(new_platform)
+    logger.info(f"Platform {new_platform.id} created")
+    return new_platform
 
 
-def remove_platform(db: Session, platform_id: str) -> None:
-    """Remove uma plataforma pelo ID."""
-    platform = get_platform_by_id(db, platform_id)
+def remove_platform(platform_repo: PlatformRepository, db: Session, platform_id: str) -> None:
+    logger.info("Attempting to remove platform")
+
+    platform = platform_repo.get_platform_by_id(platform_id)
     if not platform:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Plataforma não encontrada"
-        )
-    delete_platform(db, platform)
+        logger.warning("Platform not found.")
+        raise PlatformNotFoundException("Platform not found.")
+
+    platform_repo.delete_platform(platform)
+    db.commit()
+    logger.info(f"Platform {platform_id} deleted")

@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 
 
@@ -21,9 +21,7 @@ class Settings(BaseSettings):
     VAPID_PRIVATE_KEY: str = ""
     VAPID_CLAIMS_EMAIL: str = ""
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-
-
-settings = Settings()
+    
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
+ 
+settings = Settings() # type: ignore[call-arg]
