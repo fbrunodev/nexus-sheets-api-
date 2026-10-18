@@ -5,6 +5,7 @@ from app.models.sheet import Sheet, SheetLine, SheetStatus, CooperationType
 from app.schemas.sheet import SheetCreate, SheetUpdate, SheetLineUpdate
 from app.services.cost import get_total_costs
 from app.services.push import send_push_to_user
+from app.services.calculations import calc_line_result
 from app.models.user import User, UserRole
 from app.exceptions.sheet_exceptions import (
     SheetAlreadyFinishedException,
@@ -385,7 +386,7 @@ def calc_owner_stats(db: Session, owner_id: str, period: str) -> dict:
                     - func.coalesce(line_agg.c.total_deposit, 0)
                     + func.coalesce(line_agg.c.total_chest, 0)
                     + func.coalesce(line_agg.c.total_bonus, 0)
-                    + Sheet.salary
+                    + case((Sheet.cooperation_type != CooperationType.BAU, Sheet.salary), else_=0)
                 ),
                 0,
             ).label("grand_total"),

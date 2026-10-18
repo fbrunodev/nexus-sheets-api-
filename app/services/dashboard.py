@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import extract
-from app.models.sheet import Sheet, SheetLine, SheetStatus
+from app.models.sheet import Sheet, SheetLine, SheetStatus, CooperationType
 from app.schemas.dashboard import DashboardResponse, CostSummary, MonthlyPerformance
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -43,7 +43,8 @@ def get_dashboard_data(db: Session, owner_id: str, period: str = "all") -> Dashb
     monthly_data: dict = defaultdict(lambda: {"deposited": 0.0, "received": 0.0, "result": 0.0})
 
     for sheet in sheets:
-        total_salary += float(sheet.salary)
+        if sheet.cooperation_type != CooperationType.BAU:
+            total_salary += float(sheet.salary)
         month_key = sheet.created_at.strftime("%Y-%m")
 
         for line in sheet.lines:
