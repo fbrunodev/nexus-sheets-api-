@@ -35,10 +35,10 @@ class SheetLineResponse(BaseModel):
     bonus: float
     created_at: datetime
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def result(self) -> float:
-        
+
         return calc_line_result(self)
 
 # ----------------- SHEET SCHEMAS-------------------------------------
@@ -82,7 +82,7 @@ class SheetResponse(BaseModel):
     platform_id: Optional[str] = None
     cooperation_type: CooperationType = CooperationType.META
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def result(self) -> float:
         return calc_sheet_result(self)
