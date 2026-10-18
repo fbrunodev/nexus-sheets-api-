@@ -2,7 +2,7 @@ from pydantic import BaseModel, computed_field
 from typing import Optional, List
 from datetime import datetime
 from app.models.sheet import SheetStatus, CooperationType
-from app.services.calculations import calc_line_result
+from app.services.calculations import calc_line_result, calc_sheet_result
 
 # --------------SHEET LINE SCHEMAS-------------------------------
 
@@ -81,4 +81,8 @@ class SheetResponse(BaseModel):
     goal: int
     platform_id: Optional[str] = None
     cooperation_type: CooperationType = CooperationType.META
-    
+
+    @computed_field
+    @property
+    def result(self) -> float:
+        return calc_sheet_result(self)
