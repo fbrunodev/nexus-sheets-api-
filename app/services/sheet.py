@@ -414,16 +414,21 @@ def calc_owner_stats(db: Session, owner_id: str, period: str) -> dict:
     }
 
 
+def get_operator_ids(db: Session, owner_id: str) -> list[str]:
+    """IDs of all operators directly linked to the given owner."""
+    return [
+        u.id for u in db.query(User)
+        .filter(User.owner_id == owner_id, User.role == UserRole.OPERADOR)
+        .all()
+    ]
+
+
 def get_sheets_stats(db: Session, owner_id: str, period: str = "all") -> dict:
     # Aggregate the owner's own sheets, then fold in each operator's totals.
     # This gives a consolidated view across the entire hierarchy.
     principal_stats = calc_owner_stats(db, owner_id, period)
 
-    operator_ids = [
-        u.id for u in db.query(User)
-        .filter(User.owner_id == owner_id, User.role == UserRole.OPERADOR)
-        .all()
-    ]
+    operator_ids = get_operator_ids(db, owner_id)
 
     grand_total = principal_stats["grand_total"]
     for op_id in operator_ids:

@@ -33,6 +33,8 @@ from app.exceptions.sheet_exceptions import (
     SheetNotFoundException,
     SheetLineNotFoundException,
 )
+from app.services.monthly import get_monthly_profit
+from app.schemas.monthly import MonthlyProfitEntry
 
 router = APIRouter(prefix="/sheets", tags=["Sheets"])
 
@@ -79,6 +81,16 @@ def create_sheet(
     sheet_repo = SheetRepository(db)
     line_repo = SheetLineRepository(db)
     return create_new_sheet(sheet_repo, line_repo, db, data, current_user.id)
+
+
+@router.get("/monthly", response_model=list[MonthlyProfitEntry])
+def get_monthly(
+    months: int = Query(default=6, ge=1, le=24, description="Number of months to return (1–24)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lucro por mês: resultado das planilhas menos custos, agrupado em horário de Brasília."""
+    return get_monthly_profit(db, current_user.id, months)
 
 
 @router.get("/operator-sheets")
