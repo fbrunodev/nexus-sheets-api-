@@ -9,6 +9,8 @@ from app.exceptions.cost_exceptions import CostAlreadyExistsException, CostNotFo
 
 
 def test_cost_stats(db_session):
+    now = datetime.utcnow()
+
     owner = User(
         id="owner123",
         email="owner@test.com",
@@ -22,7 +24,7 @@ def test_cost_stats(db_session):
         id="cost_type123",
         name="BOT",
         created_by="owner123",
-        created_at=datetime.utcnow(),
+        created_at=now,
     )
     db_session.add(cost_type)
     db_session.commit()
@@ -33,20 +35,20 @@ def test_cost_stats(db_session):
             cost_type_id="cost_type123",
             owner_id="owner123",
             value=10,
-            month=8,
-            year=2026,
+            month=now.month,
+            year=now.year,
             description="test",
-            created_at=datetime.utcnow(),
+            created_at=now,
         ),
         Cost(
             id="cost2",
             cost_type_id="cost_type123",
             owner_id="owner123",
             value=10,
-            month=8,
-            year=2026,
+            month=now.month,
+            year=now.year,
             description="test",
-            created_at=datetime.utcnow(),
+            created_at=now,
         ),
     ]
     db_session.add_all(cost_type.costs)

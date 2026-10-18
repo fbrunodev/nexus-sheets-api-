@@ -1,6 +1,7 @@
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 from app.models.sheet import Sheet, SheetLine
+from app.services.calculations import calc_line_result
 from datetime import datetime, timedelta
 
 
@@ -105,7 +106,7 @@ class SheetLineRepository:
         Resultado = saque + baú - depósito
         """
 
-        line.result = float(line.withdrawal) - float(line.deposit) + float(line.chest) + float(line.bonus)
+        line.result = calc_line_result(line)
         self.db.add(line)
         return line
 

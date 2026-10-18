@@ -1,8 +1,8 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, computed_field
 from typing import Optional, List
 from datetime import datetime
 from app.models.sheet import SheetStatus, CooperationType
-
+from app.services.calculations import calc_line_result
 
 # --------------SHEET LINE SCHEMAS-------------------------------
 
@@ -33,9 +33,13 @@ class SheetLineResponse(BaseModel):
     withdrawal: float
     chest: float
     bonus: float
-    result: float
     created_at: datetime
 
+    @computed_field
+    @property
+    def result(self) -> float:
+        
+        return calc_line_result(self)
 
 # ----------------- SHEET SCHEMAS-------------------------------------
 
